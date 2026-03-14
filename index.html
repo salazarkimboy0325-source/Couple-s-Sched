@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couple Dashboard - Together</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💑</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="screen active">
+            <div class="auth-container">
+                <h1>Couple Dashboard</h1>
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Login</button>
+                    <button class="tab-btn" data-tab="register">Register</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form active">
+                    <input type="email" id="login-email" placeholder="Email" required>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form">
+                    <input type="text" id="register-name" placeholder="Your Name" required>
+                    <input type="email" id="register-email" placeholder="Email" required>
+                    <input type="password" id="register-password" placeholder="Password" required>
+                    <div class="join-options">
+                        <label>
+                            <input type="radio" name="join-type" value="create" checked> Create New Workspace
+                        </label>
+                        <label>
+                            <input type="radio" name="join-type" value="join"> Join Existing
+                        </label>
+                    </div>
+                    <div id="pairing-code-input" class="hidden">
+                        <input type="text" placeholder="Enter Pairing Code">
+                    </div>
+                    <button type="submit">Register</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard-screen" class="screen">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <button class="burger-menu">☰</button>
+                <div class="workspace-info">
+                    <h2 id="workspace-name">Loading...</h2>
+                    <span class="pairing-code" id="pairing-code"></span>
+                </div>
+                <div class="user-profile">
+                    <div class="profile-circle" id="profile-circle">👤</div>
+                    <div class="profile-dropdown hidden">
+                        <p id="user-name"></p>
+                        <p id="user-email"></p>
+                        <button id="show-pairing-code">Show Pairing Code</button>
+                        <button id="unpair-request">Request Unpair</button>
+                        <button id="delete-account">Delete Account</button>
+                        <button id="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <div class="dashboard-main">
+                <!-- Left Sidebar -->
+                <div class="left-sidebar">
+                    <!-- Mini Calendar -->
+                    <div class="mini-calendar">
+                        <div class="calendar-header">
+                            <button id="prev-month">←</button>
+                            <h3 id="current-month"></h3>
+                            <button id="next-month">→</button>
+                        </div>
+                        <div class="calendar-grid" id="mini-calendar-grid"></div>
+                    </div>
+
+                    <!-- Timer Tools -->
+                    <div class="timer-tools">
+                        <div class="tools-tabs">
+                            <button class="tool-tab active" data-tool="alarm">Alarm</button>
+                            <button class="tool-tab" data-tool="timer">Timer</button>
+                            <button class="tool-tab" data-tool="stopwatch">Stopwatch</button>
+                        </div>
+                        
+                        <!-- Alarm Section -->
+                        <div class="tool-section active" id="alarm-section">
+                            <div class="alarm-setup">
+                                <input type="time" id="alarm-time">
+                                <input type="text" id="alarm-label" placeholder="Label">
+                                <select id="alarm-repeat">
+                                    <option value="none">No repeat</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekdays">Weekdays</option>
+                                    <option value="weekends">Weekends</option>
+                                </select>
+                                <button id="set-alarm">Set Alarm</button>
+                            </div>
+                            <div class="alarms-list" id="alarms-list"></div>
+                        </div>
+                        
+                        <!-- Timer Section -->
+                        <div class="tool-section" id="timer-section">
+                            <div class="timer-display" id="timer-display">00:00</div>
+                            <div class="timer-controls">
+                                <input type="number" id="timer-minutes" placeholder="Minutes" min="1" value="5">
+                                <button id="timer-start">Start</button>
+                                <button id="timer-pause">Pause</button>
+                                <button id="timer-reset">Reset</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Stopwatch Section -->
+                        <div class="tool-section" id="stopwatch-section">
+                            <div class="stopwatch-display" id="stopwatch-display">00:00:00</div>
+                            <div class="stopwatch-controls">
+                                <button id="stopwatch-start">Start</button>
+                                <button id="stopwatch-pause">Pause</button>
+                                <button id="stopwatch-reset">Reset</button>
+                                <button id="stopwatch-lap">Lap</button>
+                            </div>
+                            <div class="laps-list" id="laps-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Content -->
+                <div class="center-content">
+                    <!-- Main Calendar -->
+                    <div class="main-calendar">
+                        <div class="calendar-view">
+                            <div class="calendar-header">
+                                <button id="today-btn">Today</button>
+                                <button id="add-event-btn">+ Add Event</button>
+                            </div>
+                            <div id="calendar-grid" class="calendar-grid-large"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tasks Section -->
+                    <div class="tasks-section">
+                        <div class="tasks-header">
+                            <h3>Tasks</h3>
+                            <button id="add-task-btn">+ Add Task</button>
+                        </div>
+                        <div class="tasks-list" id="tasks-list"></div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar - Messaging -->
+                <div class="right-sidebar">
+                    <div class="messaging-header">
+                        <h3>Messages</h3>
+                    </div>
+                    <div class="messages-list" id="messages-list"></div>
+                    <div class="message-input">
+                        <textarea id="message-text" placeholder="Type a message..."></textarea>
+                        <button id="send-message">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="event-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modal-title">Add Event</h3>
+            <form id="event-form">
+                <input type="text" id="event-title" placeholder="Event Title" required>
+                <textarea id="event-description" placeholder="Description"></textarea>
+                <input type="datetime-local" id="event-start" required>
+                <input type="datetime-local" id="event-end" required>
+                <label>
+                    <input type="checkbox" id="event-repeat"> Repeat
+                </label>
+                <select id="event-repeat-type" class="hidden">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+                <button type="submit">Save Event</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="task-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="task-modal-title">Add Task</h3>
+            <form id="task-form">
+                <input type="text" id="task-title" placeholder="Task Title" required>
+                <textarea id="task-description" placeholder="Description"></textarea>
+                <input type="datetime-local" id="task-deadline">
+                <label>
+                    <input type="checkbox" id="task-linked"> Link to Event
+                </label>
+                <select id="task-event-link" class="hidden"></select>
+                <button type="submit">Save Task</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="pairing-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Your Pairing Code</h3>
+            <div class="pairing-code-display" id="pairing-code-display"></div>
+            <p>Share this code with your partner to connect</p>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/workspace.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/messaging.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 
